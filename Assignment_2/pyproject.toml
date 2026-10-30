@@ -3,8 +3,9 @@ name = "assignment-2"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "gymnasium>=1.4.0",
     "numpy>=2.5.4",
+    "pygame>=2.6.1",
 ]
