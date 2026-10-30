@@ -5,7 +5,6 @@ def state_index(pos, size):
     """Map an (x, y) cell to a single state number in 0 .. size*size - 1."""
     return int(pos[0]) * size + int(pos[1])
 
-
 def build_model(obs, size, action_to_direction):
     """Build the known, deterministic model of one maze layout.
 
@@ -110,3 +109,49 @@ def policy_evaluation(pi, next_state, reward, terminal, gamma=0.9, theta=1e-6):
  
         if delta < theta:
             return V
+
+def policy_improvement(V, next_state, reward, terminal, gamma=0.9):
+    """Make the policy greedy with respect to V.
+ 
+    For each state, score every action with
+        q[a] = reward[s, a] + gamma * V[next_state[s, a]]
+    and give probability 1 to the best legal action (wall bumps are skipped).
+ 
+    Returns:
+        new_pi: (n_states, n_actions) array with a single 1 in each non-terminal row.
+    """
+    n_states, n_actions = next_state.shape
+    new_pi = np.zeros((n_states, n_actions))
+ 
+    for s in range(n_states):
+        if terminal[s]:
+            continue  # no action in the goal or bad cells
+ 
+        q = reward[s] + gamma * V[next_state[s]]  # score of the 4 actions
+        q[next_state[s] == s] = -np.inf           # never pick a wall bump
+        new_pi[s, np.argmax(q)] = 1.0
+ 
+    return new_pi
+
+def policy_iteration(next_state, reward, terminal, gamma=0.9, theta=1e-6):
+    """Alternate evaluation and improvement until the policy stops changing.
+ 
+    Returns:
+        pi:         the final policy, one 1 per non-terminal row.
+        V:          the values of the final policy.
+        iterations: number of evaluate + improve rounds, including the last
+                    round that confirmed nothing changed.
+    """
+    pi = initial_policy(next_state, terminal)  # start from the random policy
+    iterations = 0
+ 
+    while True:
+        V = policy_evaluation(pi, next_state, reward, terminal, gamma, theta)
+        new_pi = policy_improvement(V, next_state, reward, terminal, gamma)
+        iterations += 1
+ 
+        if np.array_equal(new_pi, pi):  # nothing changed, so the policy is stable
+            return new_pi, V, iterations
+ 
+        pi = new_pi
+ 
