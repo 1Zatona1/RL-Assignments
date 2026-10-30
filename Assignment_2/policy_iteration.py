@@ -1,5 +1,3 @@
-"""Policy iteration for the Grid Maze (pure NumPy, no gym or pygame)."""
-
 import numpy as np
 
 
@@ -64,3 +62,51 @@ def build_model(obs, size, action_to_direction):
                     reward[s, a] = -1.0
 
     return next_state, reward, terminal
+
+def initial_policy(next_state, terminal):
+    """Uniform random policy over legal moves only (no wall bumps)."""
+    n_states, n_actions = next_state.shape
+    pi = np.zeros((n_states, n_actions))
+
+    for s in range(n_states):
+        if terminal[s]:
+            continue  # no actions in the goal or bad cells
+        legal = next_state[s] != s          # True where the move changes the cell
+        pi[s, legal] = 1 / legal.sum()
+
+    return pi
+
+def policy_evaluation(pi, next_state, reward, terminal, gamma=0.9, theta=1e-6):
+    """Compute V for a given policy by repeating the update until it stops changing.
+ 
+    V_new[s] = sum_a pi[s, a] * (reward[s, a] + gamma * V[next_state[s, a]])
+ 
+    Args:
+        pi:         (n_states, n_actions) array, pi[s, a] = probability of action a in state s.
+        next_state: from build_model.
+        reward:     from build_model.
+        terminal:   from build_model. Terminal states keep V = 0.
+        gamma:      discount factor.
+        theta:      stop when the largest change in V is below this.
+ 
+    Returns:
+        V: (n_states,) array of state values under pi.
+    """
+    n_states, n_actions = pi.shape
+    V = np.zeros(n_states)  # initial guess V0 = 0
+ 
+    while True:
+        V_new = np.zeros(n_states)
+ 
+        for s in range(n_states):
+            if terminal[s]:
+                continue  # episode is over here, V stays 0
+ 
+            for a in range(n_actions):
+                V_new[s] += pi[s, a] * (reward[s, a] + gamma * V[next_state[s, a]])
+ 
+        delta = np.max(np.abs(V_new - V))
+        V = V_new
+ 
+        if delta < theta:
+            return V
