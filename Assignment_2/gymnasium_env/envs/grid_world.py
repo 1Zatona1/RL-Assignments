@@ -41,9 +41,9 @@ class GridWorldEnv(gym.Env):
         """
         self._action_to_direction = {
             Actions.right.value: np.array([1, 0]),
-            Actions.up.value: np.array([0, 1]),
+            Actions.up.value: np.array([0, -1]),
             Actions.left.value: np.array([-1, 0]),
-            Actions.down.value: np.array([0, -1]),
+            Actions.down.value: np.array([0, 1]),
         }
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
