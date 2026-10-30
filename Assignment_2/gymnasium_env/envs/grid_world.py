@@ -19,13 +19,15 @@ class GridWorldEnv(gym.Env):
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
 
-        # Observations are dictionaries with the agent's and the target's location.
+        # Observations are dictionaries with the agent's and the target's location as well as the bad locations.
         # Each location is encoded as an element of {0, ..., `size`}^2,
         # i.e. MultiDiscrete([size, size]).
         self.observation_space = spaces.Dict(
             {
                 "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
                 "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
+                "bad_1": spaces.Box(0, size - 1, shape=(2,), dtype=int),
+                "bad_2": spaces.Box(0, size - 1, shape=(2,), dtype=int),
             }
         )
 
@@ -58,7 +60,11 @@ class GridWorldEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        return {"agent": self._agent_location, "target": self._target_location}
+        return {"agent": self._agent_location.copy(), 
+                "target": self._target_location.copy(),
+                "bad_1": self._bad_location_1.copy(),
+                "bad_2": self._bad_location_2.copy(),
+                }
 
     def _get_info(self):
         return {
@@ -81,6 +87,24 @@ class GridWorldEnv(gym.Env):
             self._target_location = self.np_random.integers(
                 0, self.size, size=2, dtype=int
             )
+            
+        # choose bad location 1
+        self._bad_location_1 = self._target_location
+        while (
+            np.array_equal(self._bad_location_1, self._agent_location)
+            or np.array_equal(self._bad_location_1, self._target_location)
+        ):
+            self._bad_location_1 = self.np_random.integers(0, self.size, size=2, dtype=int)
+        
+        # choose bad location 2
+        self._bad_location_2 = self._target_location
+        while (
+            np.array_equal(self._bad_location_2, self._agent_location)
+            or np.array_equal(self._bad_location_2, self._target_location)
+            or np.array_equal(self._bad_location_2, self._bad_location_1)
+        ):
+            self._bad_location_2 = self.np_random.integers(0, self.size, size=2, dtype=int)
+        
 
         observation = self._get_obs()
         info = self._get_info()
@@ -98,8 +122,20 @@ class GridWorldEnv(gym.Env):
             self._agent_location + direction, 0, self.size - 1
         )
         # An episode is done iff the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0  # Binary sparse rewards
+        reached_goal = np.array_equal(self._agent_location, self._target_location)
+        hit_bad = (
+            np.array_equal(self._agent_location, self._bad_location_1)
+            or np.array_equal(self._agent_location, self._bad_location_2)
+        )
+
+        terminated = reached_goal or hit_bad
+
+        if reached_goal:
+            reward = 1
+        elif hit_bad:
+            reward = -1
+        else:
+            reward = 0
         observation = self._get_obs()
         info = self._get_info()
 
@@ -129,16 +165,57 @@ class GridWorldEnv(gym.Env):
         # First we draw the target
         pygame.draw.rect(
             canvas,
-            (255, 0, 0),
+            (0, 170, 80),
             pygame.Rect(
                 pix_square_size * self._target_location,
                 (pix_square_size, pix_square_size),
             ),
         )
+        # Draw the bad cell: red square with an X
+        bx, by = pix_square_size * self._bad_location_1
+        pygame.draw.rect(
+            canvas,
+            (255, 0, 0),
+            pygame.Rect(bx, by, pix_square_size, pix_square_size),
+        )
+        pad = pix_square_size * 0.2
+        pygame.draw.line(
+            canvas, (0, 0, 0),
+            (bx + pad, by + pad),
+            (bx + pix_square_size - pad, by + pix_square_size - pad),
+            width=5,
+        )
+        pygame.draw.line(
+            canvas, (0, 0, 0),
+            (bx + pix_square_size - pad, by + pad),
+            (bx + pad, by + pix_square_size - pad),
+            width=5,
+        )
+        
+        # Draw the bad cell: red square with an X
+        bx, by = pix_square_size * self._bad_location_2
+        pygame.draw.rect(
+            canvas,
+            (255, 0, 0),
+            pygame.Rect(bx, by, pix_square_size, pix_square_size),
+        )
+        pad = pix_square_size * 0.2
+        pygame.draw.line(
+            canvas, (0, 0, 0),
+            (bx + pad, by + pad),
+            (bx + pix_square_size - pad, by + pix_square_size - pad),
+            width=5,
+        )
+        pygame.draw.line(
+            canvas, (0, 0, 0),
+            (bx + pix_square_size - pad, by + pad),
+            (bx + pad, by + pix_square_size - pad),
+            width=5,
+        )
         # Now we draw the agent
         pygame.draw.circle(
             canvas,
-            (0, 0, 255),
+            (255, 255, 0),
             (self._agent_location + 0.5) * pix_square_size,
             pix_square_size / 3,
         )
