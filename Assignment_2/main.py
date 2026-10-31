@@ -62,11 +62,11 @@ def main():
 
         if choice == "1":
             episodes = ask_number("How many episodes?", 5, int)
-            gamma = ask_number("Discount factor gamma?", 0.9, float)
+            gamma = ask_gamma()
             watch(episodes, gamma)
         elif choice == "2":
             episodes = ask_number("How many episodes?", 5, int)
-            gamma = ask_number("Discount factor gamma?", 0.9, float)
+            gamma = ask_gamma()
             record(episodes, gamma)
         elif choice == "3":
             run_script("-m", "pytest", "-v")
