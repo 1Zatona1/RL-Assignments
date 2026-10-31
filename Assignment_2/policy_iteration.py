@@ -44,11 +44,9 @@ def build_model(obs, size, action_to_direction):
             s = x * size + y
             for a in range(n_actions):
                 if terminal[s]:
-                    # Absorbing: stay put, no further reward.
                     next_state[s, a] = s
                     continue
 
-                # Same rule as env.step: move, then clip at the walls.
                 nx, ny = np.clip(
                     np.array([x, y]) + action_to_direction[a], 0, size - 1
                 )
@@ -69,8 +67,8 @@ def initial_policy(next_state, terminal):
 
     for s in range(n_states):
         if terminal[s]:
-            continue  # no actions in the goal or bad cells
-        legal = next_state[s] != s          # True where the move changes the cell
+            continue 
+        legal = next_state[s] != s 
         pi[s, legal] = 1 / legal.sum()
 
     return pi
@@ -92,14 +90,14 @@ def policy_evaluation(pi, next_state, reward, terminal, gamma=0.9, theta=1e-6):
         V: (n_states,) array of state values under pi.
     """
     n_states, n_actions = pi.shape
-    V = np.zeros(n_states)  # initial guess V0 = 0
+    V = np.zeros(n_states) 
  
     while True:
         V_new = np.zeros(n_states)
  
         for s in range(n_states):
             if terminal[s]:
-                continue  # episode is over here, V stays 0
+                continue 
  
             for a in range(n_actions):
                 V_new[s] += pi[s, a] * (reward[s, a] + gamma * V[next_state[s, a]])
@@ -125,10 +123,10 @@ def policy_improvement(V, next_state, reward, terminal, gamma=0.9):
  
     for s in range(n_states):
         if terminal[s]:
-            continue  # no action in the goal or bad cells
+            continue 
  
-        q = reward[s] + gamma * V[next_state[s]]  # score of the 4 actions
-        q[next_state[s] == s] = -np.inf           # never pick a wall bump
+        q = reward[s] + gamma * V[next_state[s]] 
+        q[next_state[s] == s] = -np.inf           
         new_pi[s, np.argmax(q)] = 1.0
  
     return new_pi
@@ -142,7 +140,7 @@ def policy_iteration(next_state, reward, terminal, gamma=0.9, theta=1e-6):
         iterations: number of evaluate + improve rounds, including the last
                     round that confirmed nothing changed.
     """
-    pi = initial_policy(next_state, terminal)  # start from the random policy
+    pi = initial_policy(next_state, terminal)
     iterations = 0
  
     while True:
@@ -150,7 +148,7 @@ def policy_iteration(next_state, reward, terminal, gamma=0.9, theta=1e-6):
         new_pi = policy_improvement(V, next_state, reward, terminal, gamma)
         iterations += 1
  
-        if np.array_equal(new_pi, pi):  # nothing changed, so the policy is stable
+        if np.array_equal(new_pi, pi):
             return new_pi, V, iterations
  
         pi = new_pi
