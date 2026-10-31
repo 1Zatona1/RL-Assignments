@@ -36,9 +36,9 @@ Assignment_2/
 ```
 cd Assignment_2
 uv sync
-uv run main.py          # tests
-uv run game.py          # watch the agent in a pygame window
-uv run record.py        # record videos into videos/
+uv run test_policy_iteration.py    # tests
+uv run game.py                     # watch the agent in a pygame window
+uv run record.py                   # record videos into videos/
 ```
 
 Dependencies are listed in `pyproject.toml` and installed by `uv sync`.
