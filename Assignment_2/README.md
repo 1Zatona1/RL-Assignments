@@ -17,17 +17,18 @@ A custom Gymnasium environment (a 5x5 "Grid Maze") solved with Policy Iteration,
 ```
 Assignment_2/
 ├── gymnasium_env/
-│   ├── __init__.py          # registers gymnasium_env/GridWorld-v0
+│   ├── __init__.py              # registers gymnasium_env/GridWorld-v0
 │   └── envs/
 │       ├── __init__.py
-│       └── grid_world.py    # the environment and pygame rendering
-├── policy_iteration.py      # build_model, evaluation, improvement, policy iteration
-├── main.py                  # tests for the environment and each function
-├── game.py                  # watch the agent in a pygame window
-├── record.py                # record videos with RecordVideo
-├── gamma_experiment.py      # iteration counts for different gamma values
-├── REPORT.md                # outcome summary and answers to the questions
-├── videos/                  # recorded videos
+│       └── grid_world.py        # the environment and pygame rendering
+├── policy_iteration.py          # build_model, evaluation, improvement, policy iteration
+├── main.py                      # entry point: a text menu for everything below
+├── game.py                      # watch the agent in a pygame window
+├── record.py                    # record videos with RecordVideo
+├── test_policy_iteration.py     # pytest tests for the environment and each function
+├── gamma_experiment.py          # iteration counts for different gamma values
+├── REPORT.md                    # outcome summary and answers to the questions
+├── videos/                      # recorded videos
 └── pyproject.toml
 ```
 
@@ -36,12 +37,21 @@ Assignment_2/
 ```
 cd Assignment_2
 uv sync
-uv run test_policy_iteration.py    # tests
+uv run main.py                     # menu: watch, record, tests, gamma experiment
+```
+
+Each part can also be run on its own:
+
+```
 uv run game.py                     # watch the agent in a pygame window
 uv run record.py                   # record videos into videos/
+uv run pytest                      # tests (add -v for one line per test, -s to show prints)
+uv run gamma_experiment.py         # iteration counts for gamma = 0.5, 0.9, 0.99
 ```
 
 Dependencies are listed in `pyproject.toml` and installed by `uv sync`.
+
+**Note on gamma:** the discount factor must be above 0 and below 1 (the default is 0.9). At gamma = 1 every safe path to the goal has the same value, so equally good policies can swap forever and policy iteration never stops. The menu only accepts values in that range.
 
 ## 4. Report
 
